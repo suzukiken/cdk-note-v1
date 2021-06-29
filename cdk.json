@@ -12,6 +12,27 @@
     "@aws-cdk/aws-ecs-patterns:removeDefaultDesiredCount": true,
     "@aws-cdk/aws-rds:lowercaseDbIdentifier": true,
     "@aws-cdk/aws-efs:defaultEncryptionAtRest": true,
-    "@aws-cdk/aws-lambda:recognizeVersionProps": true
+    "@aws-cdk/aws-lambda:recognizeVersionProps": true,
+    "domain": "figmentresearch.com",
+    "subdomain": "note-dev",
+    "useast1_acmarn_exportname": "v-domain-figmentresearch-wildcard-useast1-acmarn-3",
+    "hostedzoneid_exportname": "v-domain-figmentresearch-hostedzoneid-3",
+    "cognito_idpool_id_exportname": "v-auth-cognito-idpool-id-2",
+    "cognito_userpool_id_exportname": "v-auth-cognito-userpool-id-2",
+    "cognito_userpool_webclient_id_exportname": "v-auth-cognito-userpool-webclient-id-2",
+    "cognito_userpool_fqdn_exportname": "v-auth-cognito-userpool-fqdn-2",
+    "cognito_idpool_auth_iamrolearn_exportname": "v-auth-cognito-idpool-auth-iamrolearn-2",
+    "github_repository_public_name": "note-ui-public",
+    "github_repository_admin_name": "note-ui-admin",
+    "github_owner_name": "suzukiken",
+    "github_branch_name": "master",
+    "github_connection_codestararn_smsecretname": "codepipeline-github-connections-suzukiken",
+    "distributionid_exportname": "v-note-cloudfront-distributionid-1",
+    "s3bucketname_exportname": "v-note-s3-bucketname-1",
+    "s3key_articles_prefix": "articles",
+    "s3key_images_prefix": "images",
+    "s3key_admin_prefix": "admin",
+    "elasticsearch_endpoint": "https://search-cdkelasticsearch-xcqucvrf6gfqlztkgtfh4ayxoe.ap-northeast-1.es.amazonaws.com",
+    "elasticsearch_domainarn": "arn:aws:es:ap-northeast-1:656169322665:domain/cdkelasticsearch"
   }
 }
