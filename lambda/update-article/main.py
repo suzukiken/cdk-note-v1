@@ -33,7 +33,8 @@ def lambda_handler(event, context):
     s3_contents = {}
     
     list_response = s3.list_objects_v2(
-        Bucket=BUCKET_NAME
+        Bucket=BUCKET_NAME,
+        Prefix=KEY_PREFIX
     )
     
     for content in list_response['Contents']:
@@ -43,16 +44,20 @@ def lambda_handler(event, context):
         if not filename.endswith('.md'):
             continue
         
-        get_response = client.get_object(
+        get_response = s3.get_object(
             Bucket=BUCKET_NAME,
             Key=filename,
         )
+        
+        key = filename.replace(KEY_PREFIX, '').replace('.md', '')
 
         try:
             text = get_response['Body'].read().decode('utf-8')
-            articles[Key] = text
+            s3_contents[key] = text
         except:
             continue
+    
+    print(s3_contents)
         
     # 今のgithubの内容を得る
     
@@ -68,6 +73,8 @@ def lambda_handler(event, context):
                 data = file.decoded_content.decode("utf-8")
                 github_contents[repo.name] = data
                 # TODO: URLのリンクが相対だった場合にはそれを置き換える
+    
+    print(github_contents)
 
     # 内容を比較して差異を抽出する
     
@@ -80,6 +87,8 @@ def lambda_handler(event, context):
             if s3_contents[key] == github_contents[key]:
                 continue
         diff[key] = github_contents[key]
+        
+    print(diff)
     
     # 差異をS3に反映する
     

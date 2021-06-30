@@ -1,1 +1,39 @@
-{}
+{
+   "Records":[
+      {
+         "eventVersion":"2.1",
+         "eventSource":"aws:s3",
+         "awsRegion":"ap-northeast-1",
+         "eventTime":"2021-06-30T14:32:21.287Z",
+         "eventName":"ObjectCreated:Put",
+         "userIdentity":{
+            "principalId":"AWS:AROAZRRV5JCU65HQAD24N:CdkNoteFunctionStack-UpdateArticle2502658F-FybEy3ogVgn2"
+         },
+         "requestParameters":{
+            "sourceIPAddress":"18.179.23.142"
+         },
+         "responseElements":{
+            "x-amz-request-id":"A3Q5A7F4TJC0R9YM",
+            "x-amz-id-2":"Ioup/6mv/dDTpVv8ExSFbvsHCVpS44F7bYESrmX2FqaM15wlTyMJ/mTwJk7YeWRkLS7qqThGmoishtveRwh1fQLnB0XIIrUU"
+         },
+         "s3":{
+            "s3SchemaVersion":"1.0",
+            "configurationId":"MzAyYzg2M2QtNzZmYS00NTY0LWFlYTItNzBlOTgxODBlNjdi",
+            "bucket":{
+               "name":"cdknotestragestack-bucket83908e77-15iapvi94z1g2",
+               "ownerIdentity":{
+                  "principalId":"A3IE8ALDKUHMWU"
+               },
+               "arn":"arn:aws:s3:::cdknotestragestack-bucket83908e77-15iapvi94z1g2"
+            },
+            "object":{
+               "key":"articles/cdk-lambda-kicad.md",
+               "size":1629,
+               "eTag":"28a70602a1237ceb8d968265922458ba",
+               "versionId":".6.swqXEk35jB_CE5ufa2sGFIQYa9I7K",
+               "sequencer":"0060DC807BBC70CC57"
+            }
+         }
+      }
+   ]
+}
