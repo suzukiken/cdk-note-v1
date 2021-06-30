@@ -29,9 +29,10 @@
     "github_connection_codestararn_smsecretname": "codepipeline-github-connections-suzukiken",
     "distributionid_exportname": "v-note-cloudfront-distributionid-1",
     "s3bucketname_exportname": "v-note-s3-bucketname-1",
-    "s3key_articles_prefix": "articles",
-    "s3key_images_prefix": "images",
-    "s3key_admin_prefix": "admin",
+    "s3key_articles_prefix": "articles/",
+    "s3key_images_prefix": "images/",
+    "s3key_admin_prefix": "admin/",
+    "secretsmanager_secretname": "gitHub-access-token",
     "elasticsearch_endpoint": "https://search-cdkelasticsearch-xcqucvrf6gfqlztkgtfh4ayxoe.ap-northeast-1.es.amazonaws.com",
     "elasticsearch_domainarn": "arn:aws:es:ap-northeast-1:656169322665:domain/cdkelasticsearch"
   }

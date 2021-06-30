@@ -8,6 +8,8 @@ export class CdkNoteStrageStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     
+    const prefix = this.node.tryGetContext('s3key_articles_prefix')
+    
     // bucket
     
     const bucket = new s3.Bucket(this, 'Bucket', {
@@ -35,7 +37,20 @@ export class CdkNoteStrageStack extends cdk.Stack {
       ],
     })
     
-    const trigger_function = new PythonFunction(this, "Trigger", {
+    const s3_eventsource = new S3EventSource(bucket, {
+      events: [ 
+        s3.EventType.OBJECT_CREATED,
+        s3.EventType.OBJECT_REMOVED
+      ],
+      filters: [{ 
+        prefix: prefix,
+        suffix: '.md'
+      }]
+    })
+    
+    // Lambda for Elastic Search Index
+    
+    const trigger_function = new PythonFunction(this, "UpdateIndexFunc", {
       entry: "lambda/update-index",
       index: "main.py",
       handler: "lambda_handler",
@@ -45,19 +60,24 @@ export class CdkNoteStrageStack extends cdk.Stack {
       }
     })
     
-    trigger_function.addEventSource(new S3EventSource(bucket, {
-      events: [ 
-        s3.EventType.OBJECT_CREATED,
-        s3.EventType.OBJECT_REMOVED
-      ],
-      filters: [{ 
-        prefix: 'articles',
-        suffix: '.md'
-      }]
-    }))
-    
+    trigger_function.addEventSource(s3_eventsource)
     bucket.grantReadWrite(trigger_function)
     
+    // Lambda for Generate Toppage
+    /*
+    const toppage_function = new PythonFunction(this, "TopPageFunc", {
+      entry: "lambda/update-toppage",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      environment: {
+        BUCKET_NAME: bucket.bucketName
+      }
+    })
+    
+    toppage_function.addEventSource(s3_eventsource)
+    bucket.grantReadWrite(toppage_function)
+    */
     new cdk.CfnOutput(this, 'BucketName', { 
       exportName: this.node.tryGetContext('s3bucketname_exportname'), 
       value: bucket.bucketName,

@@ -3,42 +3,38 @@ import os
 import re
 from datetime import date
 import json
+from github import Github
+
+'''
+このプログラムがやること
+
+定期的に自分のGithubの公開されたリポジトリを総浚いして
+そのリポジトリの中にあるnote/README.mdをS3のバケットにコピーする。
+（すでに同じ内容がある場合は上書きしない。
+上書きすると別のLambdaに通知されてElasticSearchのインデックス更新が無駄に行われてしまうため。）
+'''
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
+KEY_PREFIX = os.environ.get('KEY_PREFIX')
+GITHUB_ACCESS_TOKEN = os.environ.get('GITHUB_ACCESS_TOKEN')
 
-client = boto3.client('s3')
+s3 = boto3.client('s3')
+g = Github(GITHUB_ACCESS_TOKEN)
 
-tiexp = 'title = "(.+?)"'
-tgexp = 'tags = \[(.+?)\]'
-dtexp = 'date = "(.+?)"'
-coexp = '\n[+]{3}\n(.*)'
-
-SUMMARY_KEY = 'summary-title.json'
-TAG_KEY = 'summary-tag.json'
+GITHUB_PATH = "note/README.md"
+GITHUB_BRANCH = "master"
+GITHUB_OWNER = "suzukiken"
 
 def lambda_handler(event, context):
     print(event)
     
-    do = False
+    # 今のS3の内容を得る
     
-    for record in event['Records']:
-        
-        if record['eventSource'] != 'aws:s3':
-            continue
-        
-        if record['s3']['bucket']['name'] != BUCKET_NAME:
-            continue
-        
-        do = True
+    s3_contents = {}
     
-    if not do:
-        return
-    
-    list_response = client.list_objects_v2(
+    list_response = s3.list_objects_v2(
         Bucket=BUCKET_NAME
     )
-    
-    articles = []
     
     for content in list_response['Contents']:
         
@@ -54,70 +50,45 @@ def lambda_handler(event, context):
 
         try:
             text = get_response['Body'].read().decode('utf-8')
-            
-            mat = re.search(tiexp, text)
-            if mat:
-                title = mat.group(1)
-                
-            mat = re.search(tgexp, text)
-            if mat:
-                found = mat.group(1)
-                tags = [stg.replace('"', '').strip() for stg in found.split(",")]
-                
-            mat = re.search(dtexp, text)
-            if mat:
-                found = mat.group(1)
-                dte = date.fromisoformat(found)
-            
-            mat = re.search(coexp, text, flags=re.DOTALL)
-            if mat:
-                fco = mat.group(1)
-            
-            articles.append({
-                "filename": filename,
-                "title": title,
-                "tags": tags,
-                "date": dte,
-                "content": fco,
-            })
+            articles[Key] = text
         except:
             continue
-    
-    summary = []
-    
-    for article in articles:
-        summary.append({
-            'title': article['title'],
-            'date': article['date'].isoformat(),
-            'tags': article['tags'],
-            'filename': article['filename']
-        })
-    
         
-    put_response = client.put_object(
-        Bucket=BUCKET_NAME,
-        Key=SUMMARY_KEY,
-        Body=json.dumps(summary, ensure_ascii=False)
-    )
+    # 今のgithubの内容を得る
     
-    print(put_response)
+    github_contents = {}
     
-    category = {}
+    for repo in g.get_user().get_repos():
+        if repo.full_name.startswith(GITHUB_OWNER + '/') and not repo.private:
+            try:
+                file = repo.get_contents(GITHUB_PATH)
+            except:
+                continue
+            else:
+                data = file.decoded_content.decode("utf-8")
+                github_contents[repo.name] = data
+                # TODO: URLのリンクが相対だった場合にはそれを置き換える
+
+    # 内容を比較して差異を抽出する
     
-    for article in articles:
-        tag = article['tags'][0]
-        if not tag in category:
-            category[tag] = []
-        category[tag].append({
-            'title': article['title'],
-            'date': article['date'].isoformat(),
-            'tags': article['tags'],
-            'filename': article['filename']
-        })
+    # TODO: github側でリポジトリの削除などで、S3にはデータがあるがgithubにはすでにデータがないという場合の対応
     
-    put_response = client.put_object(
-        Bucket=BUCKET_NAME,
-        Key=TAG_KEY,
-        Body=json.dumps(category, ensure_ascii=False)
-    )
+    diff = {}
+    
+    for key in github_contents:
+        if key in s3_contents:
+            if s3_contents[key] == github_contents[key]:
+                continue
+        diff[key] = github_contents[key]
+    
+    # 差異をS3に反映する
+    
+    for key in diff:
+        put_response = s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=KEY_PREFIX + key + '.md',
+            Body=diff[key]
+        )
+        
+        print(put_response)
     
