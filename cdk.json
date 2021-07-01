@@ -35,6 +35,8 @@
     "secretsmanager_secretname": "gitHub-access-token",
     "elasticsearch_endpoint": "search-cdkelasticsearch-xcqucvrf6gfqlztkgtfh4ayxoe.ap-northeast-1.es.amazonaws.com",
     "elasticsearch_domainarn": "arn:aws:es:ap-northeast-1:656169322665:domain/cdkelasticsearch",
-    "elasticsearch_index": "note-articles"
+    "elasticsearch_index": "note-articles",
+    "appsync_public_apiid_exportname": "v-note-appsync-public-apiid-1",
+    "appsync_public_apiurl_exportname": "v-note-appsync-public-apiurl-1"
   }
 }

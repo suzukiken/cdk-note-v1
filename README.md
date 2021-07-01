@@ -3,3 +3,7 @@
 
  * `cdk deploy CdkNoteStrageStack`
  * `cdk deploy CdkNoteFunctionStack`
+ * `cdk deploy CdkNoteDistributionStack`
+ * `cdk deploy CdkNoteApiPublicStack`
+ * `cdk deploy CdkNotePermitPublicStack`
+ 

@@ -14,10 +14,10 @@ export class CdkNoteDistributionStack extends cdk.Stack {
     const subdomain = this.node.tryGetContext('subdomain')
     const acmarn = cdk.Fn.importValue(this.node.tryGetContext('useast1_acmarn_exportname'))
     const bucketname = cdk.Fn.importValue(this.node.tryGetContext('s3bucketname_exportname'))
-    const bucket = s3.Bucket.fromBucketName(this, 'bucket', bucketname)
-    const certificate = acm.Certificate.fromCertificateArn(this, 'certificate', acmarn)
+    const bucket = s3.Bucket.fromBucketName(this, 'Bucket', bucketname)
+    const certificate = acm.Certificate.fromCertificateArn(this, 'Certificate', acmarn)
     
-    const distribution = new cloudfront.Distribution(this, 'distribution', {
+    const distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: { 
         origin: new origins.S3Origin(bucket)
       },
@@ -25,11 +25,11 @@ export class CdkNoteDistributionStack extends cdk.Stack {
       certificate: certificate,
     })
     
-    const zone = route53.HostedZone.fromLookup(this, "zone", {
+    const zone = route53.HostedZone.fromLookup(this, "HostedZone", {
       domainName: domain,
     })
     
-    const record = new route53.ARecord(this, "record", {
+    const record = new route53.ARecord(this, "ARecord", {
       recordName: subdomain,
       target: route53.RecordTarget.fromAlias(
         new targets.CloudFrontTarget(distribution)
@@ -37,7 +37,7 @@ export class CdkNoteDistributionStack extends cdk.Stack {
       zone: zone,
     })
     
-    new cdk.CfnOutput(this, 'DistroId', { 
+    new cdk.CfnOutput(this, 'DistributionId', { 
       exportName: this.node.tryGetContext('distributionid_exportname'), 
       value: distribution.distributionId
     })
