@@ -1,73 +1,75 @@
 import boto3
 import os
 import re
-from datetime import date
+from datetime import date, datetime
 import json
+
 
 '''
 このプログラムがやること
 
 S3のコンテンツが更新されると呼び出される
-そのコンテンツはHugoのFront Matterがついたmarkdownとなっている
+
+S3のバケットに置かれたmdファイルはHugoのFront Matterがついたmarkdownとなっている
 そこからタイトルやタグを取り出して
 まだ決めていないが何らかのルールに沿ってそれを必要なところに並べてトップページを作る。
 そのルールはいずれはコンフィグファイルのようなものを参照しておすすめコンテンツを左コラムに配置するとか、
 カテゴリで分けて表示するとか、最初のタグで分けて表示するとかしたいと思っている。
 しかしそんなコンフィグファイルはまだ作っていないので、とりあえず今のところはコンテンツの更新日順に降順で並べるという程度にしておく。
+
 '''
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
+KEY_PREFIX = os.environ.get('KEY_PREFIX')
 
-client = boto3.client('s3')
+TITLES_KEY = KEY_PREFIX + 'titles.json'
+
+s3 = boto3.client('s3')
 
 tiexp = 'title = "(.+?)"'
 tgexp = 'tags = \[(.+?)\]'
 dtexp = 'date = "(.+?)"'
+upexp = 'update = "(.+?)"'
+ctexp = 'category = "(.+?)"'
 coexp = '\n[+]{3}\n(.*)'
 
-SUMMARY_KEY = 'summary-title.json'
-TAG_KEY = 'summary-tag.json'
+
+def serialize(anyobj):
+    if isinstance(anyobj, (datetime, date)):
+        return anyobj.isoformat()
+    raise TypeError ('not date')
+
 
 def lambda_handler(event, context):
     print(event)
-    '''
     
-    do = False
+    # 今のS3の内容を得る
     
-    for record in event['Records']:
-        
-        if record['eventSource'] != 'aws:s3':
-            continue
-        
-        if record['s3']['bucket']['name'] != BUCKET_NAME:
-            continue
-        
-        do = True
+    contents = {}
     
-    if not do:
-        return
-    
-    list_response = client.list_objects_v2(
-        Bucket=BUCKET_NAME
+    list_response = s3.list_objects_v2(
+        Bucket=BUCKET_NAME,
+        Prefix=KEY_PREFIX
     )
-    
-    articles = []
     
     for content in list_response['Contents']:
         
-        filename = content['Key']
+        key = content['Key']
         
-        if not filename.endswith('.md'):
+        if not key.endswith('.md'):
             continue
         
-        get_response = client.get_object(
+        get_response = s3.get_object(
             Bucket=BUCKET_NAME,
-            Key=filename,
+            Key=key,
         )
+        
+        filename = key.replace(KEY_PREFIX, '')
+        article_name = key.replace(KEY_PREFIX, '').replace('.md', '')
 
         try:
             text = get_response['Body'].read().decode('utf-8')
-            
+
             mat = re.search(tiexp, text)
             if mat:
                 title = mat.group(1)
@@ -82,55 +84,48 @@ def lambda_handler(event, context):
                 found = mat.group(1)
                 dte = date.fromisoformat(found)
             
+            mat = re.search(upexp, text)
+            if mat:
+                upd = mat.group(1)
+                
+            mat = re.search(ctexp, text)
+            if mat:
+                category = mat.group(1)
+            
             mat = re.search(coexp, text, flags=re.DOTALL)
             if mat:
                 fco = mat.group(1)
             
-            articles.append({
-                "filename": filename,
-                "title": title,
-                "tags": tags,
-                "date": dte,
-                "content": fco,
-            })
+            contents[article_name] = {
+                'filename': filename,
+                'title': title,
+                'category': category,
+                'tags': tags,
+                'date': dte,
+                'update': upd,
+                'content': fco,
+            }
+            
         except:
             continue
     
-    summary = []
+    titles = []
     
-    for article in articles:
-        summary.append({
-            'title': article['title'],
-            'date': article['date'].isoformat(),
-            'tags': article['tags'],
-            'filename': article['filename']
+    for k in contents:
+        titles.append({
+            'filename': contents[k]['filename'],
+            'title': contents[k]['title'],
+            'category': contents[k]['category'],
+            'tags': contents[k]['tags'],
+            'date': contents[k]['date'],
+            'update': contents[k]['update']
         })
-    
         
-    put_response = client.put_object(
+    put_response = s3.put_object(
         Bucket=BUCKET_NAME,
-        Key=SUMMARY_KEY,
-        Body=json.dumps(summary, ensure_ascii=False)
+        Key=TITLES_KEY,
+        Body=json.dumps(titles, ensure_ascii=False, default=serialize)
     )
     
     print(put_response)
     
-    category = {}
-    
-    for article in articles:
-        tag = article['tags'][0]
-        if not tag in category:
-            category[tag] = []
-        category[tag].append({
-            'title': article['title'],
-            'date': article['date'].isoformat(),
-            'tags': article['tags'],
-            'filename': article['filename']
-        })
-    
-    put_response = client.put_object(
-        Bucket=BUCKET_NAME,
-        Key=TAG_KEY,
-        Body=json.dumps(category, ensure_ascii=False)
-    )
-    '''

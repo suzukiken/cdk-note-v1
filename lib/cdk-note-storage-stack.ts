@@ -2,8 +2,11 @@ import * as cdk from '@aws-cdk/core';
 import * as s3 from "@aws-cdk/aws-s3";
 import * as lambda from "@aws-cdk/aws-lambda";
 import { PythonFunction } from '@aws-cdk/aws-lambda-python';
-import { S3EventSource } from '@aws-cdk/aws-lambda-event-sources';
+//import { S3EventSource } from '@aws-cdk/aws-lambda-event-sources';
 import * as iam from "@aws-cdk/aws-iam";
+import * as s3n from '@aws-cdk/aws-s3-notifications';
+import * as sns from '@aws-cdk/aws-sns';
+import * as subscriptions from "@aws-cdk/aws-sns-subscriptions";
 
 export class CdkNoteStrageStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -39,17 +42,6 @@ export class CdkNoteStrageStack extends cdk.Stack {
           maxAge: 3000,
         },
       ],
-    })
-    
-    const s3_eventsource = new S3EventSource(bucket, {
-      events: [ 
-        s3.EventType.OBJECT_CREATED,
-        s3.EventType.OBJECT_REMOVED
-      ],
-      filters: [{ 
-        prefix: PREFIX,
-        suffix: '.md'
-      }]
     })
     
     // Role for appsync that query Elasticsearch
@@ -97,15 +89,14 @@ export class CdkNoteStrageStack extends cdk.Stack {
         ES_ENDPOINT: ES_ENDPOINT,
         ES_INDEX: ES_INDEX
       },
-      role: role
+      role: role,
+      timeout: cdk.Duration.seconds(30),
     })
     
-    trigger_function.addEventSource(s3_eventsource)
     bucket.grantReadWrite(trigger_function)
     
-    
     // Lambda for Generate Toppage
-    /*
+    
     const toppage_function = new PythonFunction(this, "TopPageFunc", {
       entry: "lambda/update-toppage",
       index: "main.py",
@@ -113,12 +104,51 @@ export class CdkNoteStrageStack extends cdk.Stack {
       runtime: lambda.Runtime.PYTHON_3_8,
       environment: {
         BUCKET_NAME: bucket.bucketName
-      }
+      },
+      timeout: cdk.Duration.seconds(30),
     })
     
-    toppage_function.addEventSource(s3_eventsource)
     bucket.grantReadWrite(toppage_function)
+    
+    // Bucket Event Notification
+    
+    const topic = new sns.Topic(this, 'Topic')
+
+    bucket.addEventNotification(
+      s3.EventType.OBJECT_REMOVED,
+      new s3n.SnsDestination(topic),
+      { 
+        prefix: PREFIX, 
+        suffix: '.md' 
+      }
+    )
+    
+    bucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.SnsDestination(topic),
+      { 
+        prefix: PREFIX, 
+        suffix: '.md' 
+      }
+    )
+      
+    topic.addSubscription(
+      new subscriptions.LambdaSubscription(trigger_function)
+    )
+    
+    topic.addSubscription(
+      new subscriptions.LambdaSubscription(toppage_function)
+    )
+    
+    /*
+    const policy_statement = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["sns:Publish"],
+      principals: [new iam.ServicePrincipal("events.amazonaws.com")],
+      resources: [topic.topicArn],
+    })
     */
+    
     new cdk.CfnOutput(this, 'BucketName', { 
       exportName: this.node.tryGetContext('s3bucketname_exportname'), 
       value: bucket.bucketName,

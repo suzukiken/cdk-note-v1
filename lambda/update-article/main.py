@@ -8,10 +8,12 @@ from github import Github
 '''
 このプログラムがやること
 
-定期的に自分のGithubの公開されたリポジトリを総浚いして
+定期的に呼び出され
+自分のGithubの公開されたリポジトリを総浚いして
 そのリポジトリの中にあるnote/README.mdをS3のバケットにコピーする。
 （すでに同じ内容がある場合は上書きしない。
 上書きすると別のLambdaに通知されてElasticSearchのインデックス更新が無駄に行われてしまうため。）
+
 '''
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
@@ -101,3 +103,4 @@ def lambda_handler(event, context):
         
         print(put_response)
     
+
