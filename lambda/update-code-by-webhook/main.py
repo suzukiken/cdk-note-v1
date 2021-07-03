@@ -80,7 +80,7 @@ def lambda_handler(event, context):
                     else:
                         url = GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path
                         print('file_content.path: {}'.format(file_content.path))
-                        print('data: {}'.format(data))
+                        #print('data: {}'.format(data))
                         print('INDEX: {}'.format(INDEX))
                         print('url: {}'.format(url))
                         print('TYPE: {}'.format(TYPE))

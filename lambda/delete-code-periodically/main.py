@@ -49,7 +49,7 @@ def lambda_handler(event, context):
     
     # 今のgithubの内容を得る
     
-    github_contents = []
+    github_urls = []
     
     for repo in g.get_user().get_repos():
         if not repo.full_name.startswith(GITHUB_OWNER + '/'):
@@ -61,23 +61,50 @@ def lambda_handler(event, context):
         except:
             pass
         else:
-            print('contents: {}'.format(contents))
+            #print('contents: {}'.format(contents))
             while contents:
                 file_content = contents.pop(0)
                 if file_content.type == "dir":
                     contents.extend(repo.get_contents(file_content.path))
                 else:
-                    print('file_content: {}'.format(file_content))
-                    try:
-                        data = file_content.decoded_content.decode("utf-8")
-                    except:
-                        continue
-                    else:
-                        print('url: {}'.format(GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path))
-                        url = GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path
-                        result = es.delete(
-                            index=INDEX, 
-                            id=url,
-                            doc_type=TYPE
-                        )
-                        print('elasticsearch result: {}'.format(result))
+                    url = GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path
+                    github_urls.append(url)
+
+    # 今のelasticsearchの内容を得る
+    
+    es_urls = []
+    
+    body = {
+        "from": 0,
+        "size": 1000,
+        "query": {
+            "match_all": {
+            }
+        }
+    }
+    
+    res = es.search(
+        index=INDEX,
+        doc_type=TYPE,
+        body=body
+    )
+    
+    for hit in res["hits"]["hits"]:
+        es_urls.append(hit["_source"]["url"])
+
+    # 差分
+    
+    diff_urls = list(set(es_urls)-set(github_urls))
+
+    for url in diff_urls:
+        
+        result = es.delete(
+            index=INDEX, 
+            id=url,
+            doc_type=TYPE
+        )
+        print('elasticsearch result: {}'.format(result))
+
+    print(github_urls)
+    print(es_urls)
+    print(diff_urls)

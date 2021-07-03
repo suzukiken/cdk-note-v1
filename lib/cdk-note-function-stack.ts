@@ -88,7 +88,8 @@ export class CdkNoteFunctionStack extends cdk.Stack {
         GITHUB_ACCESS_TOKEN: access_token,
         ES_ENDPOINT: es_endpoint,
         ES_CODE_INDEX: es_index
-      }
+      },
+      role: role
     })
     
     const code_target = new LambdaFunction(code_periodic_function)
