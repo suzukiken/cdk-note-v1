@@ -78,16 +78,17 @@ def lambda_handler(event, context):
                     except:
                         continue
                     else:
+                        url = GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path
                         print('file_content.path: {}'.format(file_content.path))
                         print('data: {}'.format(data))
                         print('INDEX: {}'.format(INDEX))
-                        print('url: {}'.format(GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path))
+                        print('url: {}'.format(url))
                         print('TYPE: {}'.format(TYPE))
                         result = es.index(
                             index=INDEX, 
-                            id=file_content.path, 
+                            id=url, 
                             body={
-                                'url': GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path,
+                                'url': url,
                                 'code': data
                             }, 
                             doc_type=TYPE

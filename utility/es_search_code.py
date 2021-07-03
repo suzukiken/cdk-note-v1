@@ -39,7 +39,7 @@ body = {
     "query": {
         "match": {
             "code": {
-                "query": "CdkappsyncLambdaStack"
+                "query": "CdkNoteApiPublicStack"
             }
         }
     },

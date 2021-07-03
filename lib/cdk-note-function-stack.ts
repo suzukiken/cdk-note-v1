@@ -44,49 +44,6 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     const api = new RestApi(this, 'RestApi')
     api.root.addMethod('ANY', webhook_integration)
     
-    // 定期実行
-    
-    const periodic_function = new PythonFunction(this, "UpdateArticle", {
-      entry: "lambda/update-article-periodically",
-      index: "main.py",
-      handler: "lambda_handler",
-      runtime: lambda.Runtime.PYTHON_3_8,
-      timeout: cdk.Duration.seconds(300),
-      environment: {
-        BUCKET_NAME: bucket.bucketName,
-        KEY_PREFIX: prefix,
-        GITHUB_ACCESS_TOKEN: access_token
-      }
-    })
-    
-    bucket.grantReadWrite(periodic_function)
-    
-    const target = new LambdaFunction(periodic_function)
-
-    const rule = new events.Rule(this, 'Rule', {
-     schedule: events.Schedule.rate(cdk.Duration.hours(3)),
-     targets: [target],
-    })
-    
-    // Webhookで実行
-    
-    const article_by_webhook_function = new PythonFunction(this, "UpdateArticleByWebhook", {
-      entry: "lambda/update-article-by-webhook",
-      index: "main.py",
-      handler: "lambda_handler",
-      runtime: lambda.Runtime.PYTHON_3_8,
-      timeout: cdk.Duration.seconds(10),
-      environment: {
-        BUCKET_NAME: bucket.bucketName,
-        KEY_PREFIX: prefix,
-        GITHUB_ACCESS_TOKEN: access_token
-      }
-    })
-    
-    article_by_webhook_function.addEventSource(new SnsEventSource(topic))
-    
-    // Webhookで実行
-    
     // Role for appsync that query Elasticsearch
 
     const role = new iam.Role(this, "Role", {
@@ -118,6 +75,64 @@ export class CdkNoteFunctionStack extends cdk.Stack {
         "service-role/AWSLambdaBasicExecutionRole"
       )
     )
+    
+    // 定期実行
+    
+    const code_periodic_function = new PythonFunction(this, "DeleteCodePeriodically", {
+      entry: "lambda/delete-code-periodically",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      timeout: cdk.Duration.seconds(300),
+      environment: {
+        GITHUB_ACCESS_TOKEN: access_token,
+        ES_ENDPOINT: es_endpoint,
+        ES_CODE_INDEX: es_index
+      }
+    })
+    
+    const code_target = new LambdaFunction(code_periodic_function)
+    
+    const article_periodic_function = new PythonFunction(this, "DeleteArticlePeriodically", {
+      entry: "lambda/delete-article-periodically",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      timeout: cdk.Duration.seconds(300),
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_PREFIX: prefix,
+        GITHUB_ACCESS_TOKEN: access_token
+      }
+    })
+    
+    bucket.grantReadWrite(article_periodic_function)
+    
+    const article_target = new LambdaFunction(article_periodic_function)
+
+    const rule = new events.Rule(this, 'Rule', {
+     schedule: events.Schedule.rate(cdk.Duration.hours(3)),
+     targets: [article_target, code_target],
+    })
+    
+    // Webhookで実行
+    
+    const article_by_webhook_function = new PythonFunction(this, "UpdateArticleByWebhook", {
+      entry: "lambda/update-article-by-webhook",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_PREFIX: prefix,
+        GITHUB_ACCESS_TOKEN: access_token
+      }
+    })
+    
+    article_by_webhook_function.addEventSource(new SnsEventSource(topic))
+    
+    // Webhookで実行
     
     const code_by_webhook_function = new PythonFunction(this, "UpdateCodeByWebhook", {
       entry: "lambda/update-code-by-webhook",
