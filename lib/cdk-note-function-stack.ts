@@ -8,6 +8,7 @@ import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import { LambdaIntegration, RestApi } from '@aws-cdk/aws-apigateway';
 import * as sns from '@aws-cdk/aws-sns';
 import { SnsEventSource } from '@aws-cdk/aws-lambda-event-sources';
+import * as iam from "@aws-cdk/aws-iam";
 
 export class CdkNoteFunctionStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -19,6 +20,7 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     const secret_name = this.node.tryGetContext('secretsmanager_secretname')
     const access_token = secretsmanager.Secret.fromSecretNameV2(this, 'Secret', secret_name).secretValue.toString()
     const es_endpoint = this.node.tryGetContext('elasticsearch_endpoint')
+    const es_domainarn = this.node.tryGetContext('elasticsearch_domainarn')
     const es_index = this.node.tryGetContext('elasticsearch_code_index')
     
     // Webhook
@@ -85,6 +87,38 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     
     // Webhookで実行
     
+    // Role for appsync that query Elasticsearch
+
+    const role = new iam.Role(this, "Role", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+    })
+
+    const policy_statement = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+    })
+
+    policy_statement.addActions("es:ESHttpPost");
+    policy_statement.addActions("es:ESHttpDelete");
+    policy_statement.addActions("es:ESHttpHead");
+    policy_statement.addActions("es:ESHttpGet");
+    policy_statement.addActions("es:ESHttpPut");
+
+    policy_statement.addResources(
+      es_domainarn + "/*"
+    );
+
+    const policy = new iam.Policy(this, "Policy", {
+      statements: [policy_statement],
+    })
+
+    role.attachInlinePolicy(policy)
+    
+    role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    )
+    
     const code_by_webhook_function = new PythonFunction(this, "UpdateCodeByWebhook", {
       entry: "lambda/update-code-by-webhook",
       index: "main.py",
@@ -95,7 +129,8 @@ export class CdkNoteFunctionStack extends cdk.Stack {
         GITHUB_ACCESS_TOKEN: access_token,
         ES_ENDPOINT: es_endpoint,
         ES_CODE_INDEX: es_index
-      }
+      },
+      role: role
     })
     
     code_by_webhook_function.addEventSource(new SnsEventSource(topic))
