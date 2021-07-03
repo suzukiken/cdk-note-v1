@@ -19,7 +19,7 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     const secret_name = this.node.tryGetContext('secretsmanager_secretname')
     const access_token = secretsmanager.Secret.fromSecretNameV2(this, 'Secret', secret_name).secretValue.toString()
     const es_endpoint = this.node.tryGetContext('elasticsearch_endpoint')
-    const es_index = this.node.tryGetContext('elasticsearch_index')
+    const es_index = this.node.tryGetContext('elasticsearch_code_index')
     
     // Webhook
     
@@ -93,8 +93,8 @@ export class CdkNoteFunctionStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30),
       environment: {
         GITHUB_ACCESS_TOKEN: access_token,
-        ENDPOINT: es_endpoint,
-        INDEX: es_index
+        ES_ENDPOINT: es_endpoint,
+        ES_CODE_INDEX: es_index
       }
     })
     

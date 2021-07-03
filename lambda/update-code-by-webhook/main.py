@@ -63,19 +63,27 @@ def lambda_handler(event, context):
         
         try:
             contents = repo.get_contents(GITHUB_PATH)
-            '''
+        except:
+            pass
+        else:
+            print('contents: {}'.format(contents))
             while contents:
                 file_content = contents.pop(0)
                 if file_content.type == "dir":
                     contents.extend(repo.get_contents(file_content.path))
                 else:
-                    print(file_content)
+                    print('file_content: {}'.format(file_content))
                     try:
                         data = file_content.decoded_content.decode("utf-8")
                     except:
                         continue
                     else:
-                        res = es.index(
+                        print('file_content.path: {}'.format(file_content.path))
+                        print('data: {}'.format(data))
+                        print('INDEX: {}'.format(INDEX))
+                        print('url: {}'.format(GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path))
+                        print('TYPE: {}'.format(TYPE))
+                        result = es.index(
                             index=INDEX, 
                             id=file_content.path, 
                             body={
@@ -84,15 +92,9 @@ def lambda_handler(event, context):
                             }, 
                             doc_type=TYPE
                         )
-                        print(res)
-            '''
-        except:
-            pass
-        else:
-            print('--------------------')
-            print(contents)
+                        print('elasticsearch result: {}'.format(result))
 
-    
+
 '''
 {
    "Records":[
