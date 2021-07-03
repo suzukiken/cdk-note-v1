@@ -14,10 +14,7 @@
             "SignatureVersion":"1",
             "Signature":"UUA0N8OERQXtMo+30iBOpFSuoNQDCc2K5emgtW5/rfFuH1dvIeHwZM/hOmT9ynzHyR4Qsb/VXkSIC8zL/pmkmZORi02Lg6aALE1WNIeqti01Cmahxz1I1H4ikhhVHJ1r7zArzOqjJAXsar+O7y65rDltctO2thlYdwgde0QixXABTeEoI+yZiyYBCghFq84NK1QwAeGaryjlwLQYNHhL0WfCgzzPV9MnzbnG9VsrX8YS1roWtpY4sQtRIB2vi5HHhjz1UOxlo6wzN5Xd/n13P5cvvy7plldKDYKU16JLm0gicQrSwN9Xt8TFM2sRyYiIGD19ydvkwfvggyLiiowAXA==",
             "SigningCertUrl":"https://sns.ap-northeast-1.amazonaws.com/SimpleNotificationService-010a507c1833636cd94bdb98bd93083a.pem",
-            "UnsubscribeUrl":"https://sns.ap-northeast-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:ap-northeast-1:656169322665:CdkNoteStrageStack-TopicBFC7AF6E-AOCFS613C2CF:8af863bc-70db-4bbd-8b78-34f4ece3c315",
-            "MessageAttributes":{
-               
-            }
+            "UnsubscribeUrl":"https://sns.ap-northeast-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:ap-northeast-1:656169322665:CdkNoteStrageStack-TopicBFC7AF6E-AOCFS613C2CF:8af863bc-70db-4bbd-8b78-34f4ece3c315"
          }
       }
    ]
