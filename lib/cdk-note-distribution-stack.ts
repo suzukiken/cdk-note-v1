@@ -17,9 +17,17 @@ export class CdkNoteDistributionStack extends cdk.Stack {
     const bucket = s3.Bucket.fromBucketName(this, 'Bucket', bucketname)
     const certificate = acm.Certificate.fromCertificateArn(this, 'Certificate', acmarn)
     
+    const cache_policy = new cloudfront.CachePolicy(this, 'CachePolicy', {
+      headerBehavior: cloudfront.CacheHeaderBehavior.allowList(
+        'Access-Control-Request-Headers', 'Access-Control-Request-Method', 'Origin'
+      ),
+    })
+    
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultBehavior: { 
-        origin: new origins.S3Origin(bucket)
+        origin: new origins.S3Origin(bucket),
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+        cachePolicy: cache_policy
       },
       domainNames: [cdk.Fn.join(".", [subdomain, domain])],
       certificate: certificate,
