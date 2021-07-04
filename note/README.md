@@ -44,7 +44,13 @@ HugoでもJekyllでも、ともかくどのテーマも美しいと思うけれ�
 
 ### メモ
 
+#### Githubの通知方法
+
 GithubではPushなどの変更があった場合の通知方法として、webhookがあり、それの設定をするのが最も簡単だと思うので、それを利用した。
 webhookの通知先は1つのURLに限定されているので、先で一旦Lambdaを経由して（←実は無駄かもしれない。Api Gatewayから直接SNSにメッセージを投げ込むこともできるかもしれないと後で気がついたのでそうしただけ。）SNSに通知してそれを複数のLambda関数がサブスクライブするようにしている。
 
-webhookは設定が楽なのでそれがベストと思ってそうしているけど、AWSクレデンシャルを登録してGithub ActionsでEventBridgeに通知するというかなり手間のかかる方法もあるようです。
+webhookは設定が楽なのでそれがベストと思ってそうしているけれど、AWSクレデンシャルを登録してGithub ActionsでEventBridgeに通知するというかなり手間のかかる方法もあるようです。
+
+#### CloudFront経由でアクセスする際のCORSの設定
+
+やらなくてもいいことなのだけれど、S3のデータにアクセスする時に、S3に設定したCORSのヘッダなどをCloudFront経由でも提供されるようにするために、[AWSの記事](https://aws.amazon.com/premiumsupport/knowledge-center/no-access-control-allow-origin-error/)を参考にして、CloudFrontの[cache behaviorを設定した](https://github.com/suzukiken/cdk-note/blob/5119baa2e7b6886fa750b6f70b88a562c25be104/lib/cdk-note-distribution-stack.ts#L20-L24)。
