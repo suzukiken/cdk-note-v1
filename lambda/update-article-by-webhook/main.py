@@ -52,7 +52,7 @@ def lambda_handler(event, context):
         except:
             pass
         else:
-            print('contents: {}'.format(contents))
+            #print('contents: {}'.format(contents))
             github_contents = contents.decoded_content.decode("utf-8")
 
         # 今のS3の内容を得る
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
         except:
             pass
         
-        print(s3_contents)
+        #print(s3_contents)
         
         # 差異をS3に反映する
         
