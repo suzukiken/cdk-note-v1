@@ -57,6 +57,8 @@ def lambda_handler(event, context):
         
         key = content['Key']
         
+        print(key)
+        
         if not key.endswith('.md'):
             continue
         
@@ -96,7 +98,7 @@ def lambda_handler(event, context):
             if mat:
                 fco = mat.group(1)
             
-            contents[article_name] = {
+            contents[filename] = {
                 'filename': filename,
                 'title': title,
                 'category': category,
@@ -114,6 +116,7 @@ def lambda_handler(event, context):
     for k in contents:
         titles.append({
             'filename': contents[k]['filename'],
+            'content': contents[k]['content'][:100],
             'title': contents[k]['title'],
             'category': contents[k]['category'],
             'tags': contents[k]['tags'],

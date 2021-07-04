@@ -10,6 +10,7 @@ echo "{}" > test/event.json
 source test/setenv.sh
 python-lambda-local -t 10 -f lambda_handler lambda/update-article/main.py test/event.json
 python-lambda-local -t 10 -f lambda_handler lambda/update-index/main.py test/event.json
+python-lambda-local -t 10 -f lambda_handler lambda/update-toppage/main.py test/event.json
 python-lambda-local -t 10 -f lambda_handler lambda/update-article-by-webhook/main.py test/event-sns-from-webhook.json
 python-lambda-local -t 10 -f lambda_handler lambda/called-by-webhook/main.py test/event-webhook.json
 python-lambda-local -t 10 -f lambda_handler lambda/update-code-by-webhook/main.py test/event-sns-from-webhook.json
