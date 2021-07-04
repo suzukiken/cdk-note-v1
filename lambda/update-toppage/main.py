@@ -37,7 +37,7 @@ def lambda_handler(event, context):
     
     # 今のS3の内容を得る
     
-    contents = {}
+    contents = []
     
     list_response = s3.list_objects_v2(
         Bucket=BUCKET_NAME,
