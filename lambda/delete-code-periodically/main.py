@@ -49,7 +49,7 @@ def lambda_handler(event, context):
     
     # 今のgithubの内容を得る
     
-    github_urls = []
+    github_names = []
     
     for repo in g.get_user().get_repos():
         if not repo.full_name.startswith(GITHUB_OWNER + '/'):
@@ -67,12 +67,11 @@ def lambda_handler(event, context):
                 if file_content.type == "dir":
                     contents.extend(repo.get_contents(file_content.path))
                 else:
-                    url = GITHUB_URL_PREFIX + repo.full_name + GITHUB_URL_MIDDLE + file_content.path
-                    github_urls.append(url)
+                    github_names.append(repo.name)
 
     # 今のelasticsearchの内容を得る
     
-    es_urls = []
+    es_names = []
     
     body = {
         "from": 0,
@@ -90,13 +89,13 @@ def lambda_handler(event, context):
     )
     
     for hit in res["hits"]["hits"]:
-        es_urls.append(hit["_source"]["url"])
+        es_names.append(hit["_source"]["reponame"])
 
     # 差分
     
-    diff_urls = list(set(es_urls)-set(github_urls))
+    diff_names = list(set(es_names)-set(github_names))
 
-    for url in diff_urls:
+    for url in diff_names:
         
         result = es.delete(
             index=INDEX, 
@@ -105,6 +104,6 @@ def lambda_handler(event, context):
         )
         print('elasticsearch result: {}'.format(result))
 
-    print(github_urls)
-    print(es_urls)
-    print(diff_urls)
+    print(github_names)
+    print(es_names)
+    print(diff_names)

@@ -52,4 +52,5 @@ res = es.search(
 )
 
 for hit in res["hits"]["hits"]:
-    print("{} {} {}".format(hit["_source"]["title"], hit["_id"], hit["_source"]["content"]))
+    print(hit["_source"])
+    # print("{} {} {}".format(hit["_source"]["title"], hit["_id"], hit["_source"]["content"]))

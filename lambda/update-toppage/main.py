@@ -58,12 +58,10 @@ def lambda_handler(event, context):
             Key=key,
         )
         
-        filename = key.replace(KEY_ARTICLES_PREFIX, '')
-
         try:
             content = json.loads(get_response['Body'].read().decode('utf-8'))
             content['content'] = content['content'][:100]
-            contents[filename] = content
+            contents.append(content)
         except:
             continue
     
