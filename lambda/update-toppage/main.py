@@ -116,6 +116,7 @@ def lambda_handler(event, context):
     for k in contents:
         titles.append({
             'filename': contents[k]['filename'],
+            'id': contents[k]['filename'].replace('.md', ''),
             'content': contents[k]['content'][:100],
             'title': contents[k]['title'],
             'category': contents[k]['category'],
