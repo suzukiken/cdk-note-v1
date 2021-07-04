@@ -1,7 +1,7 @@
 import boto3
 import os
 import re
-from datetime import date
+from datetime import date, datetime
 import json
 from github import Github
 import urllib.parse
