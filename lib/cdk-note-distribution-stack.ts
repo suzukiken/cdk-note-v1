@@ -50,5 +50,10 @@ export class CdkNoteDistributionStack extends cdk.Stack {
       value: distribution.distributionId
     })
     
+    new cdk.CfnOutput(this, 'DistributionDomainname', { 
+      exportName: this.node.tryGetContext('distribution_domainname_exportname'), 
+      value: distribution.domainName
+    })
+    
   }
 }

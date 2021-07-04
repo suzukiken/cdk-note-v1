@@ -9,6 +9,8 @@ import { LambdaIntegration, RestApi } from '@aws-cdk/aws-apigateway';
 import * as sns from '@aws-cdk/aws-sns';
 import { SnsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import * as iam from "@aws-cdk/aws-iam";
+import * as subscriptions from "@aws-cdk/aws-sns-subscriptions";
+import * as cloudfront from '@aws-cdk/aws-cloudfront';
 
 export class CdkNoteFunctionStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -22,6 +24,21 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     const es_endpoint = this.node.tryGetContext('elasticsearch_endpoint')
     const es_domainarn = this.node.tryGetContext('elasticsearch_domainarn')
     const es_index = this.node.tryGetContext('elasticsearch_code_index')
+    const summary_prefix = this.node.tryGetContext('s3key_summary_prefix')
+    const distribution_id = cdk.Fn.importValue(this.node.tryGetContext('distributionid_exportname'))
+    const distribution_domainname = cdk.Fn.importValue(this.node.tryGetContext('distribution_domainname_exportname'))
+    
+    // distribution for invalidate
+    
+    const distribution = cloudfront.Distribution.fromDistributionAttributes(this, 'Distribution', {
+      distributionId: distribution_id, 
+      domainName: distribution_domainname
+    })
+    
+    // S3 event topic
+    
+    const s3_topicarn = cdk.Fn.importValue(this.node.tryGetContext('s3bucket_topicarn_exportname'))
+    const s3_topic = sns.Topic.fromTopicArn(this, 'S3Topic', s3_topicarn)
     
     // Webhook
     
@@ -151,6 +168,130 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     })
     
     code_by_webhook_function.addEventSource(new SnsEventSource(topic))
+    
+    // S3 bucket event
+    
+    // Role for Elasticsearch
+
+    const es_role = new iam.Role(this, "EsRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+    })
+
+    const es_policy_statement = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+    })
+
+    es_policy_statement.addActions("es:ESHttpPost");
+    es_policy_statement.addActions("es:ESHttpDelete");
+    es_policy_statement.addActions("es:ESHttpHead");
+    es_policy_statement.addActions("es:ESHttpGet");
+    es_policy_statement.addActions("es:ESHttpPut");
+
+    es_policy_statement.addResources(
+      es_domainarn + "/*"
+    );
+
+    const es_policy = new iam.Policy(this, "EsPolicy", {
+      statements: [es_policy_statement],
+    })
+
+    es_role.attachInlinePolicy(es_policy)
+    
+    es_role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    )
+    
+    // Lambda for Elastic Search Index
+    
+    const trigger_function = new PythonFunction(this, "UpdateIndexFunc", {
+      entry: "lambda/update-index",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_PREFIX: prefix,
+        ES_ENDPOINT: es_endpoint,
+        ES_INDEX: es_index
+      },
+      role: es_role,
+      timeout: cdk.Duration.seconds(30),
+    })
+    
+    bucket.grantReadWrite(trigger_function)
+    
+    // Lambda for Generate Toppage
+    
+    const toppage_function = new PythonFunction(this, "TopPageFunc", {
+      entry: "lambda/update-toppage",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_ARTICLES_PREFIX: prefix,
+        KEY_SUMMARY_PREFIX: summary_prefix
+      },
+      timeout: cdk.Duration.seconds(30),
+    })
+    
+    bucket.grantReadWrite(toppage_function)
+    
+    // Lambda for CloudFront Invalidate
+    
+    // Role for Distribution create_invalidation
+
+    const cf_role = new iam.Role(this, "CfRole", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+    })
+
+    const cf_policy_statement = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+    })
+
+    cf_policy_statement.addActions("cloudfront:CreateInvalidation")
+
+    cf_policy_statement.addResources("arn:aws:cloudfront::" + this.account + ":distribution/" + distribution.distributionId)
+
+    const cf_policy = new iam.Policy(this, "CfPolicy", {
+      statements: [policy_statement],
+    })
+
+    cf_role.attachInlinePolicy(cf_policy)
+    
+    cf_role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaBasicExecutionRole"
+      )
+    )
+    
+    const invalidate_function = new PythonFunction(this, "InvalidateFunc", {
+      entry: "lambda/invalidate-cloudfront-by-update",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      environment: {
+        DISTRIBUTION_ID: distribution.distributionId
+      },
+      role: cf_role,
+      timeout: cdk.Duration.seconds(15),
+    })
+    
+    s3_topic.addSubscription(
+      new subscriptions.LambdaSubscription(trigger_function)
+    )
+    
+    s3_topic.addSubscription(
+      new subscriptions.LambdaSubscription(toppage_function)
+    )
+    
+    s3_topic.addSubscription(
+      new subscriptions.LambdaSubscription(invalidate_function)
+    )
+    
+    // Output
     
     new cdk.CfnOutput(this, 'URL', { 
       value: api.url
