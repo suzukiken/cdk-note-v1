@@ -46,7 +46,7 @@ export class CdkNoteStrageStack extends cdk.Stack {
       new s3n.SnsDestination(topic),
       { 
         prefix: PREFIX, 
-        suffix: '.md' 
+        suffix: '.json' 
       }
     )
     
@@ -55,7 +55,7 @@ export class CdkNoteStrageStack extends cdk.Stack {
       new s3n.SnsDestination(topic),
       { 
         prefix: PREFIX, 
-        suffix: '.md' 
+        suffix: '.json' 
       }
     )
     

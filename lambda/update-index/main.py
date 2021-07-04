@@ -41,13 +41,6 @@ KEY_PREFIX = os.environ.get('KEY_PREFIX')
 
 s3 = boto3.client('s3')
 
-tiexp = 'title = "(.+?)"'
-tgexp = 'tags = \[(.+?)\]'
-dtexp = 'date = "(.+?)"'
-upexp = 'update = "(.+?)"'
-ctexp = 'category = "(.+?)"'
-coexp = '\n[+]{3}\n(.*)'
-
 def es_put_article(article):
     print(article)
     res = es.index(
@@ -85,51 +78,11 @@ def lambda_handler(event, context):
                 Key=record_in_message['s3']['object']['key'],
             )
             
-            filename = record_in_message['s3']['object']['key'].replace(KEY_PREFIX, '').replace('.md', '')
-    
-            #try:
-            text = get_response['Body'].read().decode('utf-8')
+            article = json.loads(get_response['Body'].read().decode('utf-8'))
             
-            mat = re.search(tiexp, text)
-            if mat:
-                title = mat.group(1)
-                
-            mat = re.search(tgexp, text)
-            if mat:
-                found = mat.group(1)
-                tags = [stg.replace('"', '').strip() for stg in found.split(",")]
-                
-            mat = re.search(dtexp, text)
-            if mat:
-                found = mat.group(1)
-                dte = date.fromisoformat(found)
-            
-            mat = re.search(upexp, text)
-            if mat:
-                upd = mat.group(1)
-                
-            mat = re.search(ctexp, text)
-            if mat:
-                category = mat.group(1)
-            
-            mat = re.search(coexp, text, flags=re.DOTALL)
-            if mat:
-                fco = mat.group(1)
-            
-            article = {
-                "filename": filename,
-                "title": title,
-                "category": category,
-                "tags": tags,
-                "date": dte,
-                "update": upd,
-                "content": fco,
-            }
+            del article['reponame']
             
             es_put_article(article)
-            
-            #except:
-            #    continue
 
 '''
 {

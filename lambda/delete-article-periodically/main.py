@@ -38,7 +38,7 @@ def lambda_handler(event, context):
     )
     
     for content in list_response['Contents']:
-        if not content['Key'].endswith('.md'):
+        if not content['Key'].endswith('.json'):
             continue
         filename = content['Key'].replace(KEY_PREFIX, '')
         if filename:
@@ -52,7 +52,7 @@ def lambda_handler(event, context):
     
     for repo in g.get_user().get_repos():
         if repo.full_name.startswith(GITHUB_OWNER + '/') and not repo.private:
-            github_contents.append(repo.name + '.md')
+            github_contents.append(repo.name + '.json')
     
     print(github_contents)
 

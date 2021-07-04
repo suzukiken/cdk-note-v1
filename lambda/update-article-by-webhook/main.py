@@ -28,6 +28,18 @@ GITHUB_PATH = "note/README.md"
 GITHUB_BRANCH = "master"
 GITHUB_OWNER = "suzukiken"
 
+tiexp = 'title = "(.+?)"'
+tgexp = 'tags = \[(.+?)\]'
+dtexp = 'date = "(.+?)"'
+upexp = 'update = "(.+?)"'
+ctexp = 'category = "(.+?)"'
+coexp = '\n[+]{3}\n(.*)'
+
+def serialize(anyobj):
+    if isinstance(anyobj, (datetime, date)):
+        return anyobj.isoformat()
+    raise TypeError ('not date')
+
 def lambda_handler(event, context):
     print(event)
     
@@ -45,7 +57,7 @@ def lambda_handler(event, context):
         if repo.private:
             return
         
-        github_contents = ''
+        github_contents = {}
         
         try:
             contents = repo.get_contents(GITHUB_PATH)
@@ -53,7 +65,48 @@ def lambda_handler(event, context):
             pass
         else:
             #print('contents: {}'.format(contents))
-            github_contents = contents.decoded_content.decode("utf-8")
+            text = contents.decoded_content.decode("utf-8")
+            
+            try:
+                mat = re.search(tiexp, text)
+                if mat:
+                    title = mat.group(1)
+                    
+                mat = re.search(tgexp, text)
+                if mat:
+                    found = mat.group(1)
+                    tags = [stg.replace('"', '').strip() for stg in found.split(",")]
+                    
+                mat = re.search(dtexp, text)
+                if mat:
+                    found = mat.group(1)
+                    dte = date.fromisoformat(found)
+                
+                mat = re.search(upexp, text)
+                if mat:
+                    upd = mat.group(1)
+                    
+                mat = re.search(ctexp, text)
+                if mat:
+                    category = mat.group(1)
+                
+                mat = re.search(coexp, text, flags=re.DOTALL)
+                if mat:
+                    fco = mat.group(1)
+                
+                github_contents = {
+                    'reponame': repo.name,
+                    'filename': repo.name + '.json',
+                    'title': title,
+                    'category': category,
+                    'tags': tags,
+                    'date': dte,
+                    'update': upd,
+                    'content': fco,
+                }
+                
+            except:
+                continue
 
         # 今のS3の内容を得る
         
@@ -62,9 +115,9 @@ def lambda_handler(event, context):
         try:
             get_response = s3.get_object(
                 Bucket=BUCKET_NAME,
-                Key=KEY_PREFIX + repo.name + '.md',
+                Key=KEY_PREFIX + repo.name + '.json',
             )
-            s3_contents = get_response['Body'].read().decode('utf-8')
+            s3_contents = json.loads(get_response['Body'].read().decode('utf-8'))
         except:
             pass
         
@@ -75,8 +128,8 @@ def lambda_handler(event, context):
         if not s3_contents == github_contents:
             put_response = s3.put_object(
                 Bucket=BUCKET_NAME,
-                Key=KEY_PREFIX + repo.name + '.md',
-                Body=github_contents
+                Key=KEY_PREFIX + repo.name + '.json',
+                Body=json.dumps(github_contents, ensure_ascii=False, default=serialize)
             )
             
             print(put_response)

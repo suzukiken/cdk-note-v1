@@ -4,7 +4,6 @@ import re
 from datetime import date, datetime
 import json
 
-
 '''
 このプログラムがやること
 
@@ -26,14 +25,6 @@ KEY_SUMMARY_PREFIX = os.environ.get('KEY_SUMMARY_PREFIX')
 TITLES_KEY = KEY_SUMMARY_PREFIX + 'titles.json'
 
 s3 = boto3.client('s3')
-
-tiexp = 'title = "(.+?)"'
-tgexp = 'tags = \[(.+?)\]'
-dtexp = 'date = "(.+?)"'
-upexp = 'update = "(.+?)"'
-ctexp = 'category = "(.+?)"'
-coexp = '\n[+]{3}\n(.*)'
-
 
 def serialize(anyobj):
     if isinstance(anyobj, (datetime, date)):
@@ -59,7 +50,7 @@ def lambda_handler(event, context):
         
         print(key)
         
-        if not key.endswith('.md'):
+        if not key.endswith('.json'):
             continue
         
         get_response = s3.get_object(
@@ -70,65 +61,16 @@ def lambda_handler(event, context):
         filename = key.replace(KEY_ARTICLES_PREFIX, '')
 
         try:
-            text = get_response['Body'].read().decode('utf-8')
-
-            mat = re.search(tiexp, text)
-            if mat:
-                title = mat.group(1)
-                
-            mat = re.search(tgexp, text)
-            if mat:
-                found = mat.group(1)
-                tags = [stg.replace('"', '').strip() for stg in found.split(",")]
-                
-            mat = re.search(dtexp, text)
-            if mat:
-                found = mat.group(1)
-                dte = date.fromisoformat(found)
-            
-            mat = re.search(upexp, text)
-            if mat:
-                upd = mat.group(1)
-                
-            mat = re.search(ctexp, text)
-            if mat:
-                category = mat.group(1)
-            
-            mat = re.search(coexp, text, flags=re.DOTALL)
-            if mat:
-                fco = mat.group(1)
-            
-            contents[filename] = {
-                'filename': filename,
-                'title': title,
-                'category': category,
-                'tags': tags,
-                'date': dte,
-                'update': upd,
-                'content': fco,
-            }
-            
+            content = json.loads(get_response['Body'].read().decode('utf-8'))
+            content['content'] = content['content'][:100]
+            contents[filename] = content
         except:
             continue
     
-    titles = []
-    
-    for k in contents:
-        titles.append({
-            'filename': contents[k]['filename'],
-            'id': contents[k]['filename'].replace('.md', ''),
-            'content': contents[k]['content'][:100],
-            'title': contents[k]['title'],
-            'category': contents[k]['category'],
-            'tags': contents[k]['tags'],
-            'date': contents[k]['date'],
-            'update': contents[k]['update']
-        })
-        
     put_response = s3.put_object(
         Bucket=BUCKET_NAME,
         Key=TITLES_KEY,
-        Body=json.dumps(titles, ensure_ascii=False, default=serialize)
+        Body=json.dumps(contents, ensure_ascii=False, default=serialize)
     )
     
     print(put_response)
