@@ -256,7 +256,7 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     cf_policy_statement.addResources("arn:aws:cloudfront::" + this.account + ":distribution/" + distribution.distributionId)
 
     const cf_policy = new iam.Policy(this, "CfPolicy", {
-      statements: [policy_statement],
+      statements: [cf_policy_statement],
     })
 
     cf_role.attachInlinePolicy(cf_policy)
