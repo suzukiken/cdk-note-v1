@@ -1,5 +1,5 @@
 schema {
-    query: Query
+  query: Query
 }
 input SearchInput {
   word: String
@@ -21,6 +21,17 @@ type Article {
   lank: Int
   highlight: ArticleHighlight
 }
+type ProgramHighlight {
+  url: [String]
+  code: [String]
+}
+type Program {
+  id: String
+  url: String
+  code: String
+  highlight: ProgramHighlight
+}
 type Query {
   searchArticles(input: SearchInput): [ Article ]
+  searchPrograms(word: String): [ Program ]
 }

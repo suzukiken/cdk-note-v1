@@ -7,6 +7,7 @@ export class CdkNoteApiPublicStack extends cdk.Stack {
     super(scope, id, props);
     
     const es_index = this.node.tryGetContext('elasticsearch_index')
+    const es_code_index = this.node.tryGetContext('elasticsearch_code_index')
     const es_endpoint = this.node.tryGetContext('elasticsearch_endpoint')
     const es_domain_arn = this.node.tryGetContext('elasticsearch_domainarn')
     
@@ -70,7 +71,7 @@ export class CdkNoteApiPublicStack extends cdk.Stack {
       serviceRoleArn: appsync_es_role.roleArn,
     })
 
-    const es_search_blog_resolver = new appsync.CfnResolver(this, "Resolver", {
+    const es_search_article_resolver = new appsync.CfnResolver(this, "Resolver", {
       apiId: api.apiId,
       typeName: "Query",
       fieldName: "searchArticles",
@@ -117,8 +118,48 @@ export class CdkNoteApiPublicStack extends cdk.Stack {
       `,
     })
     
+    const es_search_program_resolver = new appsync.CfnResolver(this, "ProgramResolver", {
+      apiId: api.apiId,
+      typeName: "Query",
+      fieldName: "searchPrograms",
+      dataSourceName: es_datasource.name,
+      requestMappingTemplate: `{
+        "version":"2017-02-28",
+        "operation":"GET",
+        "path":"/${es_code_index}/_search",
+        "params": {
+          "body": {
+            "query": {
+              "multi_match" : {
+                "query": "$\{context.args.word\}",
+                "operator": "and",
+                "fields": [ "url", "code" ] 
+              }
+            },
+            "highlight": {
+              "fields": {
+                "url": {},
+                "code": {}
+              }
+            }
+          }
+        }
+      }`,
+      responseMappingTemplate: `
+        #set($items = [])
+        #foreach($entry in $context.result.hits.hits)
+          #set($item = $entry.get("_source"))
+          $util.qr($item.put("id", $entry.get("_id")))
+          $util.qr($item.put("highlight", $entry.get("highlight")))
+          $util.qr($items.add($item))
+        #end
+        $util.toJson($items)
+      `,
+    })
+    
     // これが無いとNotFoundのエラーが出る
-    es_search_blog_resolver.addDependsOn(es_datasource)
+    es_search_article_resolver.addDependsOn(es_datasource)
+    es_search_program_resolver.addDependsOn(es_datasource)
     
     // Output
     
