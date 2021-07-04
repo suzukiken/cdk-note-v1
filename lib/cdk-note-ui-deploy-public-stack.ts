@@ -16,7 +16,8 @@ export class CdkNoteUiDeployPublicStack extends cdk.Stack {
     const owner = this.node.tryGetContext('github_owner_name')
     const branch = this.node.tryGetContext('github_branch_name')
     const smname = this.node.tryGetContext('github_connection_codestararn_smsecretname')
-    
+    const s3key_public_prefix = this.node.tryGetContext('s3key_public_prefix')
+
     const DISTRIBUTION_ID = cdk.Fn.importValue(this.node.tryGetContext('distributionid_exportname'))
     const BUCKETNAME = cdk.Fn.importValue(this.node.tryGetContext('s3bucketname_exportname'))
     
@@ -65,7 +66,8 @@ export class CdkNoteUiDeployPublicStack extends cdk.Stack {
     const deploy_action = new codepipeline_actions.S3DeployAction({
       actionName: id + '-deployaction',
       input: build_output,
-      bucket: bucket
+      bucket: bucket,
+      objectKey: s3key_public_prefix.replace('/', '')
     })
 
     // Lambda to invalidate CloudFront cache

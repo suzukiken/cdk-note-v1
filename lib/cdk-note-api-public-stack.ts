@@ -138,7 +138,6 @@ export class CdkNoteApiPublicStack extends cdk.Stack {
             },
             "highlight": {
               "fields": {
-                "url": {},
                 "code": {}
               }
             }

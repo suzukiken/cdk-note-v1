@@ -36,6 +36,7 @@
     "s3key_summary_prefix": "summary/",
     "s3key_images_prefix": "images/",
     "s3key_admin_prefix": "admin/",
+    "s3key_public_prefix": "public/",
     "secretsmanager_secretname": "gitHub-access-token",
     "elasticsearch_endpoint": "search-cdkelasticsearch-xcqucvrf6gfqlztkgtfh4ayxoe.ap-northeast-1.es.amazonaws.com",
     "elasticsearch_domainarn": "arn:aws:es:ap-northeast-1:656169322665:domain/cdkelasticsearch",

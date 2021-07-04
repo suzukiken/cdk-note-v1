@@ -22,7 +22,6 @@ type Article {
   highlight: ArticleHighlight
 }
 type ProgramHighlight {
-  url: [String]
   code: [String]
 }
 type Program {
