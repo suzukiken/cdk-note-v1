@@ -37,6 +37,7 @@ HugoでもJekyllでも、ともかくどのテーマも美しいと思うけれ�
 ### リポジトリの構成はこのようになっている
 
 * [S3バケットとオブジェクト作成などのイベント処理](../lib/cdk-note-storage-stack.ts)
+* [CloudFrontを経由したS3バケットの配信](../lib/cdk-note-distribution-stack.ts)
 * [定期実行やGithubのpush時のイベントで動くLambda関数](../lib/cdk-note-function-stack.ts)
 * [CloudFrontで配信するS3とDNSの設定](../lib/cdk-note-distribution-stack.ts)
 * [AppSyncのGraphQLAPIの設定](../lib/cdk-note-api-public-stack.ts)
