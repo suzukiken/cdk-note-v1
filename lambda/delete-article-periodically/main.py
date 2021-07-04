@@ -38,7 +38,11 @@ def lambda_handler(event, context):
     )
     
     for content in list_response['Contents']:
-        s3_contents.append(content['Key'])
+        if not content['Key'].endswith('.md'):
+            continue
+        filename = content['Key'].replace(KEY_PREFIX, '')
+        if filename:
+            s3_contents.append(filename)
 
     print(s3_contents)
         
@@ -59,7 +63,7 @@ def lambda_handler(event, context):
     diff = []
     
     for key in s3_contents:
-        if key in github_contents:
+        if not key in github_contents:
             diff.append(key)
         
     print(diff)

@@ -28,8 +28,16 @@ export class CdkNoteUiDeployPublicStack extends cdk.Stack {
     
     // code pipeline
     
+    const environmentVariables = {
+      COGNITO_IDPOOL_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_idpool_id_exportname')) },
+      COGNITO_USERPOOL_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_id_exportname')) },
+      COGNITO_USERPOOL_WEBCLIENT_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_webclient_id_exportname')) },
+      APPSYNC_GRAPHQL_URL: { value: cdk.Fn.importValue(this.node.tryGetContext('appsync_public_apiurl_exportname')) }
+    }
+    
     const pipeline_project = new codebuild.PipelineProject(this, 'pipeline_project', {
       buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.yml'), // this line is not necessary. 
+      environmentVariables: environmentVariables
     })
     
     const source_output = new codepipeline.Artifact();
@@ -128,6 +136,10 @@ export class CdkNoteUiDeployPublicStack extends cdk.Stack {
           actions: [deploy_action, invalidate_action],
         }
       ],
+    })
+    
+    new cdk.CfnOutput(this, 'Params', { 
+      value: JSON.stringify(environmentVariables)
     })
     
   }

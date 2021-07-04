@@ -13,10 +13,11 @@ export class CdkNoteStrageStack extends cdk.Stack {
     super(scope, id, props);
     
     const PREFIX = this.node.tryGetContext('s3key_articles_prefix')
+    const SUMMARY_PREFIX = this.node.tryGetContext('s3key_summary_prefix')
     const ES_ENDPOINT = this.node.tryGetContext('elasticsearch_endpoint')
     const ES_INDEX = this.node.tryGetContext('elasticsearch_index')
     const ES_DOMAIN_ARN = this.node.tryGetContext('elasticsearch_domainarn')
-    
+
     // bucket
     
     const bucket = new s3.Bucket(this, 'Bucket', {
@@ -104,7 +105,9 @@ export class CdkNoteStrageStack extends cdk.Stack {
       handler: "lambda_handler",
       runtime: lambda.Runtime.PYTHON_3_8,
       environment: {
-        BUCKET_NAME: bucket.bucketName
+        BUCKET_NAME: bucket.bucketName,
+        KEY_ARTICLES_PREFIX: PREFIX,
+        KEY_SUMMARY_PREFIX: SUMMARY_PREFIX
       },
       timeout: cdk.Duration.seconds(30),
     })

@@ -20,9 +20,10 @@ S3のバケットに置かれたmdファイルはHugoのFront Matterがついた
 '''
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
-KEY_PREFIX = os.environ.get('KEY_PREFIX')
+KEY_ARTICLES_PREFIX = os.environ.get('KEY_ARTICLES_PREFIX')
+KEY_SUMMARY_PREFIX = os.environ.get('KEY_SUMMARY_PREFIX')
 
-TITLES_KEY = KEY_PREFIX + 'titles.json'
+TITLES_KEY = KEY_SUMMARY_PREFIX + 'titles.json'
 
 s3 = boto3.client('s3')
 
@@ -49,7 +50,7 @@ def lambda_handler(event, context):
     
     list_response = s3.list_objects_v2(
         Bucket=BUCKET_NAME,
-        Prefix=KEY_PREFIX
+        Prefix=KEY_ARTICLES_PREFIX
     )
     
     for content in list_response['Contents']:
@@ -64,8 +65,7 @@ def lambda_handler(event, context):
             Key=key,
         )
         
-        filename = key.replace(KEY_PREFIX, '')
-        article_name = key.replace(KEY_PREFIX, '').replace('.md', '')
+        filename = key.replace(KEY_ARTICLES_PREFIX, '')
 
         try:
             text = get_response['Body'].read().decode('utf-8')

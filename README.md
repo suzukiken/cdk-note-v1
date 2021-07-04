@@ -6,4 +6,4 @@
  * `cdk deploy CdkNoteDistributionStack`
  * `cdk deploy CdkNoteApiPublicStack`
  * `cdk deploy CdkNotePermitPublicStack`
- 
+ * `cdk deploy CdkNoteUiDeployPublicStack`

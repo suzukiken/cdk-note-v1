@@ -7,7 +7,7 @@ import { CdkNoteFunctionStack } from '../lib/cdk-note-function-stack';
 import { CdkNoteDistributionStack } from '../lib/cdk-note-distribution-stack';
 import { CdkNoteApiPublicStack } from '../lib/cdk-note-api-public-stack';
 import { CdkNotePermitPublicStack } from '../lib/cdk-note-permit-public-stack';
-
+import { CdkNoteUiDeployPublicStack } from '../lib/cdk-note-ui-deploy-public-stack';
 
 
 const app = new cdk.App();
@@ -32,5 +32,9 @@ new CdkNoteApiPublicStack(app, 'CdkNoteApiPublicStack', {
 });
 
 new CdkNotePermitPublicStack(app, 'CdkNotePermitPublicStack', {
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+});
+
+new CdkNoteUiDeployPublicStack(app, 'CdkNoteUiDeployPublicStack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 });
