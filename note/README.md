@@ -40,7 +40,6 @@ HugoでもJekyllでも、ともかくどのテーマも美しいと思うけれ�
 * [定期実行やGithubのpush時のイベントで動くLambda関数](../lib/cdk-note-function-stack.ts)
 * [CloudFrontで配信するS3とDNSの設定](../lib/cdk-note-distribution-stack.ts)
 * [AppSyncのGraphQLAPIの設定](../lib/cdk-note-api-public-stack.ts)
-* [AppSyncのGraphQLAPIの設定](../lib/cdk-note-api-public-stack.ts)
 
 ### メモ
 
