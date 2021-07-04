@@ -132,6 +132,7 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     })
     
     article_by_webhook_function.addEventSource(new SnsEventSource(topic))
+    bucket.grantReadWrite(article_by_webhook_function)
     
     // Webhookで実行
     
