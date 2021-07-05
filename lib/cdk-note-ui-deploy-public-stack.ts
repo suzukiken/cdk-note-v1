@@ -67,7 +67,7 @@ export class CdkNoteUiDeployPublicStack extends cdk.Stack {
       actionName: id + '-deployaction',
       input: build_output,
       bucket: bucket,
-      objectKey: s3key_public_prefix.replace('/', '')
+      //objectKey: s3key_public_prefix.replace('/', '')
     })
 
     // Lambda to invalidate CloudFront cache

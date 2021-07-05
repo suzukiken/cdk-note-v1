@@ -15,4 +15,5 @@ python-lambda-local -t 10 -f lambda_handler lambda/update-article-by-webhook/mai
 python-lambda-local -t 10 -f lambda_handler lambda/called-by-webhook/main.py test/event-webhook.json
 python-lambda-local -t 10 -f lambda_handler lambda/update-code-by-webhook/main.py test/event-sns-from-webhook.json
 python-lambda-local -t 100 -f lambda_handler lambda/update-article-periodically/main.py test/event.json
+python-lambda-local -t 100 -f lambda_handler lambda/delete-code-periodically/main.py test/event.json
 ```

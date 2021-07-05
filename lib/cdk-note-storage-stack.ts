@@ -13,7 +13,8 @@ export class CdkNoteStrageStack extends cdk.Stack {
     
     const bucket = new s3.Bucket(this, 'Bucket', {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      versioned: false,
+      websiteIndexDocument: "index.html",
+      websiteErrorDocument: "index.html",
       publicReadAccess: true,
       cors: [
         {

@@ -47,28 +47,6 @@ es = Elasticsearch(
 def lambda_handler(event, context):
     print(event)
     
-    # 今のgithubの内容を得る
-    
-    github_names = []
-    
-    for repo in g.get_user().get_repos():
-        if not repo.full_name.startswith(GITHUB_OWNER + '/'):
-            continue
-        if repo.private:
-            continue
-        try:
-            contents = repo.get_contents(GITHUB_PATH)
-        except:
-            pass
-        else:
-            #print('contents: {}'.format(contents))
-            while contents:
-                file_content = contents.pop(0)
-                if file_content.type == "dir":
-                    contents.extend(repo.get_contents(file_content.path))
-                else:
-                    github_names.append(repo.name)
-
     # 今のelasticsearchの内容を得る
     
     es_names = []
@@ -89,11 +67,35 @@ def lambda_handler(event, context):
     )
     
     for hit in res["hits"]["hits"]:
-        es_names.append(hit["_source"]["reponame"])
+        print('-------------------')
+        print(hit["_source"])
+        #es_names.append(hit["_source"]["_id"])
+
+    # 今のgithubの内容を得る
+    '''
+    github_names = []
+    
+    for repo in g.get_user().get_repos():
+        if not repo.full_name.startswith(GITHUB_OWNER + '/'):
+            continue
+        if repo.private:
+            continue
+        try:
+            contents = repo.get_contents(GITHUB_PATH)
+        except:
+            pass
+        else:
+            #print('contents: {}'.format(contents))
+            while contents:
+                file_content = contents.pop(0)
+                if file_content.type == "dir":
+                    contents.extend(repo.get_contents(file_content.path))
+                else:
+                    github_names.append(repo.name)
 
     # 差分
     
-    diff_names = list(set(es_names)-set(github_names))
+    diff_names = list(set(es_names) - set(github_names))
 
     for url in diff_names:
         
@@ -107,3 +109,4 @@ def lambda_handler(event, context):
     print(github_names)
     print(es_names)
     print(diff_names)
+    '''

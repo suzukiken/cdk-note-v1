@@ -31,6 +31,16 @@ export class CdkNoteDistributionStack extends cdk.Stack {
       },
       domainNames: [cdk.Fn.join(".", [subdomain, domain])],
       certificate: certificate,
+      defaultRootObject: "index.html",
+      errorResponses: [{
+        httpStatus: 404,
+        responseHttpStatus: 200,
+        responsePagePath: '/index.html'
+      }, {
+        httpStatus: 403,
+        responseHttpStatus: 200,
+        responsePagePath: '/index.html'
+      }]
     })
     
     const zone = route53.HostedZone.fromLookup(this, "HostedZone", {
