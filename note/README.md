@@ -55,3 +55,7 @@ webhookは設定が楽なのでそれがベストと思ってそうしている�
 #### CloudFront経由でアクセスする際のCORSの設定
 
 やらなくてもいいことなのだけれど、S3のデータにアクセスする時に、S3に設定したCORSのヘッダなどをCloudFront経由でも提供されるようにするために、[AWSの記事](https://aws.amazon.com/premiumsupport/knowledge-center/no-access-control-allow-origin-error/)を参考にして、CloudFrontの[cache behaviorを設定した](https://github.com/suzukiken/cdk-note/blob/5119baa2e7b6886fa750b6f70b88a562c25be104/lib/cdk-note-distribution-stack.ts#L20-L24)。
+
+#### SPAをCloudFrontで配信する
+
+今回のUIはReactとReact Routerを使っているため、ルートオブジェクトとエラー時のオブジェクトを[index.htmlに設定している](https://github.com/suzukiken/cdk-note/blob/a9bef05ca8208329ec0543667b527818a6dbb200/lib/cdk-note-distribution-stack.ts#L34-L42)。ただ[こちらのリポジトリ](https://github.com/suzukiken/utilui)で作ったサイトの方では、同じようにReactとReact RouterとCloudFrontを使っているけれど、特にそういう設定をしていないのに、問題なくウェブが閲覧できているので、そこが不思議なところ。そのために何かをしたのかもしれないんだけど忘れてしまっている。
