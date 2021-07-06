@@ -145,9 +145,26 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     
     const article_create_target = new LambdaFunction(article_create_periodic_function)
     
+    const article_index_periodic_function = new PythonFunction(this, "CreateArticleIndexPeriodically", {
+      entry: "lambda/update-index-periodically",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_PREFIX: prefix,
+        GITHUB_ACCESS_TOKEN: access_token
+      }
+    })
+    
+    bucket.grantReadWrite(article_index_periodic_function)
+    
+    const article_index_target = new LambdaFunction(article_index_periodic_function)
+    
     const rule = new events.Rule(this, 'Rule', {
      schedule: events.Schedule.rate(cdk.Duration.hours(3)),
-     targets: [article_target, code_target, article_create_target],
+     targets: [article_target, code_target, article_create_target, article_index_target],
     })
     
     // Webhookで実行

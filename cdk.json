@@ -14,7 +14,7 @@
     "@aws-cdk/aws-efs:defaultEncryptionAtRest": true,
     "@aws-cdk/aws-lambda:recognizeVersionProps": true,
     "domain": "figmentresearch.com",
-    "subdomain": "note-dev",
+    "subdomain": "note",
     "useast1_acmarn_exportname": "v-domain-figmentresearch-wildcard-useast1-acmarn-3",
     "hostedzoneid_exportname": "v-domain-figmentresearch-hostedzoneid-3",
     "cognito_idpool_id_exportname": "v-auth-cognito-idpool-id-2",

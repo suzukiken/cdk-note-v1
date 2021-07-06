@@ -8,6 +8,10 @@ touch test/event.json
 touch test/setenv.sh
 echo "{}" > test/event.json
 source test/setenv.sh
+
+
+source test/env/bin/activate
+source test/setenv.sh
 python-lambda-local -t 10 -f lambda_handler lambda/update-article/main.py test/event.json
 python-lambda-local -t 10 -f lambda_handler lambda/update-index/main.py test/event.json
 python-lambda-local -t 10 -f lambda_handler lambda/update-toppage/main.py test/event.json

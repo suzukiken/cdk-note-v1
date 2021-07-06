@@ -43,6 +43,8 @@ s3 = boto3.client('s3')
 
 def es_put_article(article):
     print(article)
+    if not article.get('update'):
+        article['update'] = article['date']
     res = es.index(
         index=INDEX, 
         id=article['filename'], 

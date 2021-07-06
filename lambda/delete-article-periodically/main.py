@@ -55,6 +55,26 @@ def lambda_handler(event, context):
             github_contents.append(repo.name + '.json')
     
     print(github_contents)
+    
+    # notesリポの記事も追加する
+    
+    repo = g.get_repo('suzukiken/notes')
+    
+    try:
+        contents = repo.get_contents('')
+    except:
+        pass
+    else:
+        while contents:
+            file_content = contents.pop(0)
+            if file_content.type == "dir":
+                contents.extend(repo.get_contents(file_content.path))
+            else:
+                if not file_content.path.endswith('.md'):
+                    continue
+                github_contents.append(file_content.path.replace('.md', '.json'))
+    
+    print(github_contents)
 
     # 内容を比較して差異を抽出する
     
