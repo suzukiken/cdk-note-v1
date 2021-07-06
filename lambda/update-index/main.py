@@ -80,7 +80,8 @@ def lambda_handler(event, context):
             
             article = json.loads(get_response['Body'].read().decode('utf-8'))
             
-            del article['reponame']
+            if 'reponame' in article:
+                del article['reponame']
             
             es_put_article(article)
 

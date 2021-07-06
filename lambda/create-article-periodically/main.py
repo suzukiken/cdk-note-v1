@@ -4,17 +4,14 @@ import re
 from datetime import date, datetime
 import json
 from github import Github
-import urllib.parse
 
 '''
 このプログラムがやること
 
-Githubのpushをwebhookとして受ける
-
-そのリポジトリの中にあるnote/README.mdを読み込んでjsonにしてS3のバケットに保存する。
-（すでに同じ内容がある場合は上書きしない。
-上書きすると別のLambdaに通知されてElasticSearchのインデックス更新が無駄に行われてしまうため。）
-
+定期的に呼び出され
+自分のGithubの公開されたリポジトリを総浚いして
+そのリポジトリの中にあるnote/README.mdとS3のバケットを比較して
+S3にないものは生成する
 '''
 
 BUCKET_NAME = os.environ.get('BUCKET_NAME')
@@ -43,31 +40,41 @@ def serialize(anyobj):
 def lambda_handler(event, context):
     print(event)
     
-    for record in event['Records']:
-        if record['EventSource'] != 'aws:sns':
+    # 今のS3の内容を得る
+    
+    s3_contents = {}
+    
+    list_response = s3.list_objects_v2(
+        Bucket=BUCKET_NAME,
+        Prefix=KEY_PREFIX
+    )
+    
+    for content in list_response['Contents']:
+        if not content['Key'].endswith('.json'):
             continue
+        get_response = s3.get_object(
+            Bucket=BUCKET_NAME,
+            Key=content['Key']
+        )
+        key = content['Key'].replace(KEY_PREFIX, '').replace('.json', '')
+        s3_contents[key] = json.loads(get_response['Body'].read().decode('utf-8'))
+
+    print(s3_contents)
         
-        message = json.loads(record['Sns']['Message'])
-        repository = message['repository']
-        full_name = repository['full_name']
-        repo = g.get_repo(full_name)
-        
-        # githubの内容を得る
-        
-        if repo.private:
+    # 今のgithubの内容を得る
+    
+    github_contents = {}
+    
+    for repo in g.get_user().get_repos():
+        if not repo.full_name.startswith(GITHUB_OWNER + '/') or repo.private:
             continue
-        
-        github_contents = {}
-        
+            
         try:
             contents = repo.get_contents(GITHUB_PATH)
         except:
             continue
         else:
-            #print('contents: {}'.format(contents))
             text = contents.decoded_content.decode("utf-8")
-            #print('contents: {}'.format(text))
-            
             try:
                 
                 title = category = tags = dte = upd = fco = ''
@@ -98,7 +105,7 @@ def lambda_handler(event, context):
                 if mat:
                     fco = mat.group(1)
                 
-                github_contents = {
+                content = {
                     'reponame': repo.name,
                     'filename': repo.name + '.json',
                     'title': title,
@@ -109,32 +116,33 @@ def lambda_handler(event, context):
                     'content': fco,
                 }
                 
+                github_contents[repo.name] = content
+                
             except:
                 continue
+    
+    print(github_contents)
 
-        # 今のS3の内容を得る
+    # 内容を比較して差異を抽出する
+    
+    # TODO: github側でリポジトリの削除などで、S3にはデータがあるがgithubにはすでにデータがないという場合の対応
+    
+    diff = []
+    
+    for key in github_contents:
+        if not key in s3_contents:
+            diff.append(key)
         
-        s3_contents = ''
+    print(diff)
+    
+    # 差異をS3に反映する
+    
+    for key in diff:
+        response = s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=KEY_PREFIX + key + '.json',
+            Body=json.dumps(github_contents[key], ensure_ascii=False, default=serialize)
+        )
         
-        try:
-            get_response = s3.get_object(
-                Bucket=BUCKET_NAME,
-                Key=KEY_PREFIX + repo.name + '.json',
-            )
-            s3_contents = json.loads(get_response['Body'].read().decode('utf-8'))
-        except:
-            pass
-        
-        #print(s3_contents)
-        
-        # 差異をS3に反映する
-        
-        if not s3_contents == github_contents:
-            put_response = s3.put_object(
-                Bucket=BUCKET_NAME,
-                Key=KEY_PREFIX + repo.name + '.json',
-                Body=json.dumps(github_contents, ensure_ascii=False, default=serialize)
-            )
-            
-            print(put_response)
-        
+        print(response)
+    

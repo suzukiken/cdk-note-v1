@@ -128,9 +128,26 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     
     const article_target = new LambdaFunction(article_periodic_function)
 
+    const article_create_periodic_function = new PythonFunction(this, "CreateArticlePeriodically", {
+      entry: "lambda/create-article-periodically",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      timeout: cdk.Duration.seconds(300),
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_PREFIX: prefix,
+        GITHUB_ACCESS_TOKEN: access_token
+      }
+    })
+    
+    bucket.grantReadWrite(article_create_periodic_function)
+    
+    const article_create_target = new LambdaFunction(article_create_periodic_function)
+    
     const rule = new events.Rule(this, 'Rule', {
      schedule: events.Schedule.rate(cdk.Duration.hours(3)),
-     targets: [article_target, code_target],
+     targets: [article_target, code_target, article_create_target],
     })
     
     // Webhookで実行
@@ -168,6 +185,24 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     })
     
     code_by_webhook_function.addEventSource(new SnsEventSource(topic))
+    
+    // Webhookで実行
+    
+    const article_from_note_function = new PythonFunction(this, "UpdateArticleFromNote", {
+      entry: "lambda/create-article-from-note",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+        KEY_PREFIX: prefix,
+        GITHUB_ACCESS_TOKEN: access_token
+      }
+    })
+    
+    article_from_note_function.addEventSource(new SnsEventSource(topic))
+    bucket.grantReadWrite(article_from_note_function)
     
     // S3 bucket event
     
