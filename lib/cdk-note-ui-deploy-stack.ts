@@ -8,26 +8,22 @@ import { PythonFunction } from '@aws-cdk/aws-lambda-python';
 import * as iam from '@aws-cdk/aws-iam';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 
-export class CdkNoteUiDeployAdminStack extends cdk.Stack {
+export class CdkNoteUiDeployStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     
-    const domain = this.node.tryGetContext('domain')
-    const subdomain = this.node.tryGetContext('subdomain')
-    const repository = this.node.tryGetContext('github_repository_admin_name')
+    const repository = this.node.tryGetContext('github_repository_name')
     const owner = this.node.tryGetContext('github_owner_name')
     const branch = this.node.tryGetContext('github_branch_name')
     const smname = this.node.tryGetContext('github_connection_codestararn_smsecretname')
+    const domain = this.node.tryGetContext('domain')
+    const subdomain = this.node.tryGetContext('subdomain')
     
-    const COGNITO_IDPOOL_ID = cdk.Fn.importValue(this.node.tryGetContext('cognito_idpool_id_exportname'))
-    const COGNITO_USERPOOL_ID = cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_id_exportname'))
-    const COGNITO_USERPOOL_WEBCLIENT_ID = cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_webclient_id_exportname'))
-    const COGNITO_USERPOOL_DOMAINNAME = cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_fqdn_exportname'))
-    const COGNITO_USERPOOL_URL = 'https://' + subdomain + '.' + domain // + '/'
     const DISTRIBUTION_ID = cdk.Fn.importValue(this.node.tryGetContext('distributionid_exportname'))
     const BUCKETNAME = cdk.Fn.importValue(this.node.tryGetContext('s3bucketname_exportname'))
-    const ADMIN_PREFIX = this.node.tryGetContext('s3key_admin_prefix')
-    const IMAGE_PREFIX = this.node.tryGetContext('s3key_images_prefix')
+    
+    const COGNITO_USERPOOL_DOMAINNAME = cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_fqdn_exportname'))
+    const COGNITO_USERPOOL_URL = 'https://' + subdomain + '.' + domain // + '/'
     
     const codestararn = secretsmanager.Secret.fromSecretNameV2(this, 'secret', smname).secretValue.toString()
     
@@ -38,14 +34,14 @@ export class CdkNoteUiDeployAdminStack extends cdk.Stack {
     // code pipeline
     
     const environmentVariables = {
-      COGNITO_IDPOOL_ID: { value: COGNITO_IDPOOL_ID },
-      COGNITO_USERPOOL_ID: { value: COGNITO_USERPOOL_ID },
-      COGNITO_USERPOOL_WEBCLIENT_ID: { value: COGNITO_USERPOOL_WEBCLIENT_ID },
+      COGNITO_IDPOOL_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_idpool_id_exportname')) },
+      COGNITO_USERPOOL_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_id_exportname')) },
+      COGNITO_USERPOOL_WEBCLIENT_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_webclient_id_exportname')) },
+      APPSYNC_GRAPHQL_URL: { value: cdk.Fn.importValue(this.node.tryGetContext('appsync_public_apiurl_exportname')) },
+      S3_BUCKETNAME: { value: BUCKETNAME },
       COGNITO_USERPOOL_DOMAINNAME: { value: COGNITO_USERPOOL_DOMAINNAME },
       COGNITO_USERPOOL_SIGNIN_URL: { value: COGNITO_USERPOOL_URL },
-      COGNITO_USERPOOL_SIGNOUT_URL: { value: COGNITO_USERPOOL_URL },
-      S3_BUCKETNAME: { value: BUCKETNAME },
-      S3_PREFIX: { value: IMAGE_PREFIX }
+      COGNITO_USERPOOL_SIGNOUT_URL: { value: COGNITO_USERPOOL_URL }
     }
     
     const pipeline_project = new codebuild.PipelineProject(this, 'pipeline_project', {
@@ -66,7 +62,7 @@ export class CdkNoteUiDeployAdminStack extends cdk.Stack {
       output: source_output,
       branch: branch,
     })
-    
+
     const build_action = new codepipeline_actions.CodeBuildAction({
       actionName: id + '-buildaction',
       project: pipeline_project,
@@ -79,7 +75,6 @@ export class CdkNoteUiDeployAdminStack extends cdk.Stack {
       actionName: id + '-deployaction',
       input: build_output,
       bucket: bucket,
-      objectKey: ADMIN_PREFIX
     })
 
     // Lambda to invalidate CloudFront cache
@@ -155,5 +150,6 @@ export class CdkNoteUiDeployAdminStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'Params', { 
       value: JSON.stringify(environmentVariables)
     })
+    
   }
 }
