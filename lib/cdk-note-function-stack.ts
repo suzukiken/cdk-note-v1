@@ -11,6 +11,7 @@ import { SnsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import * as iam from "@aws-cdk/aws-iam";
 import * as subscriptions from "@aws-cdk/aws-sns-subscriptions";
 import * as cloudfront from '@aws-cdk/aws-cloudfront';
+import * as appsync from '@aws-cdk/aws-appsync';
 
 export class CdkNoteFunctionStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -27,6 +28,10 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     const summary_prefix = this.node.tryGetContext('s3key_summary_prefix')
     const distribution_id = cdk.Fn.importValue(this.node.tryGetContext('distributionid_exportname'))
     const distribution_domainname = cdk.Fn.importValue(this.node.tryGetContext('distribution_domainname_exportname'))
+    
+    const api_url = cdk.Fn.importValue(this.node.tryGetContext('appsync_public_apiurl_exportname'))
+    const graphql_apiid = cdk.Fn.importValue(this.node.tryGetContext('appsync_public_apiid_exportname'))
+    const graphq_api = appsync.GraphqlApi.fromGraphqlApiAttributes(this, 'api', { graphqlApiId: graphql_apiid })
     
     // distribution for invalidate
     
@@ -165,6 +170,46 @@ export class CdkNoteFunctionStack extends cdk.Stack {
     const rule = new events.Rule(this, 'Rule', {
      schedule: events.Schedule.rate(cdk.Duration.hours(3)),
      targets: [article_target, code_target, article_create_target, article_index_target],
+    })
+    
+    // 短い期間での定期呼び出し
+    
+    var api_call_role = new iam.Role(this, "ApiCallRole", {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")
+      ]
+    })
+    
+    api_call_role.attachInlinePolicy(new iam.Policy(this, 'ApiCallPolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "appsync:GraphQL"
+          ],
+          resources: [ graphq_api.arn + "/*" ]
+        })
+      ]
+    }))
+    
+    const api_call_lambda_function = new PythonFunction(this, "ApiCallLambdaFunction", {
+      entry: "lambda/periodic-api-call",
+      index: "main.py",
+      handler: "lambda_handler",
+      runtime: lambda.Runtime.PYTHON_3_8,
+      role: role,
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        API_URL: api_url
+      }
+    })
+    
+    const api_call_target = new LambdaFunction(api_call_lambda_function)
+    
+    new events.Rule(this, 'ApiCallRule', {
+     schedule: events.Schedule.rate(cdk.Duration.minutes(30)),
+     targets: [api_call_target],
     })
     
     // Webhookで実行
