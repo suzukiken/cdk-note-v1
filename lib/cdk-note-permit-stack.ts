@@ -16,33 +16,38 @@ export class CdkNotePermitStack extends cdk.Stack {
     const bucketname = cdk.Fn.importValue(this.node.tryGetContext('s3bucketname_exportname'))
     const bucket = s3.Bucket.fromBucketName(this, 'Bucket', bucketname)
     
+    const s3_policy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:DeleteObject"
+      ],
+      resources: [
+        bucket.bucketArn,
+        bucket.bucketArn + "/*"
+      ]
+    })
+    
+    const api_policy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        "appsync:GraphQL"
+      ],
+      resources: [ api.arn + "/*" ]
+    })
+    
     unauth_iamrole.attachInlinePolicy(new iam.Policy(this, 'Policy', {
       statements: [
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: [
-            "appsync:GraphQL"
-          ],
-          resources: [ api.arn + "/*" ]
-        })
+        api_policy,
+        s3_policy
       ]
     }))
     
     auth_iamrole.attachInlinePolicy(new iam.Policy(this, 'AuthPolicy', {
       statements: [
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: [
-            "s3:PutObject",
-            "s3:GetObject",
-            "s3:ListBucket",
-            "s3:DeleteObject"
-          ],
-          resources: [
-            bucket.bucketArn,
-            bucket.bucketArn + "/*"
-          ]
-        })
+        s3_policy
       ]
     }))
     
