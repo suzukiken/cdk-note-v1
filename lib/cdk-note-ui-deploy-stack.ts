@@ -16,14 +16,9 @@ export class CdkNoteUiDeployStack extends cdk.Stack {
     const owner = this.node.tryGetContext('github_owner_name')
     const branch = this.node.tryGetContext('github_branch_name')
     const smname = this.node.tryGetContext('github_connection_codestararn_smsecretname')
-    const domain = this.node.tryGetContext('domain')
-    const subdomain = this.node.tryGetContext('subdomain')
-    
+
     const DISTRIBUTION_ID = cdk.Fn.importValue(this.node.tryGetContext('distributionid_exportname'))
     const BUCKETNAME = cdk.Fn.importValue(this.node.tryGetContext('s3bucketname_exportname'))
-    
-    const COGNITO_USERPOOL_DOMAINNAME = cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_fqdn_exportname'))
-    const COGNITO_USERPOOL_URL = 'https://' + subdomain + '.' + domain // + '/'
     
     const codestararn = secretsmanager.Secret.fromSecretNameV2(this, 'secret', smname).secretValue.toString()
     
@@ -37,11 +32,7 @@ export class CdkNoteUiDeployStack extends cdk.Stack {
       COGNITO_IDPOOL_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_idpool_id_exportname')) },
       COGNITO_USERPOOL_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_id_exportname')) },
       COGNITO_USERPOOL_WEBCLIENT_ID: { value: cdk.Fn.importValue(this.node.tryGetContext('cognito_userpool_webclient_id_exportname')) },
-      APPSYNC_GRAPHQL_URL: { value: cdk.Fn.importValue(this.node.tryGetContext('appsync_public_apiurl_exportname')) },
-      S3_BUCKETNAME: { value: BUCKETNAME },
-      COGNITO_USERPOOL_DOMAINNAME: { value: COGNITO_USERPOOL_DOMAINNAME },
-      COGNITO_USERPOOL_SIGNIN_URL: { value: COGNITO_USERPOOL_URL },
-      COGNITO_USERPOOL_SIGNOUT_URL: { value: COGNITO_USERPOOL_URL }
+      APPSYNC_GRAPHQL_URL: { value: cdk.Fn.importValue(this.node.tryGetContext('appsync_public_apiurl_exportname')) }
     }
     
     const pipeline_project = new codebuild.PipelineProject(this, 'pipeline_project', {
