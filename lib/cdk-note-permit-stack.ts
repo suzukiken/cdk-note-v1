@@ -40,13 +40,13 @@ export class CdkNotePermitStack extends cdk.Stack {
     
     unauth_iamrole.attachInlinePolicy(new iam.Policy(this, 'Policy', {
       statements: [
-        api_policy,
-        s3_policy
+        api_policy
       ]
     }))
     
     auth_iamrole.attachInlinePolicy(new iam.Policy(this, 'AuthPolicy', {
       statements: [
+        api_policy,
         s3_policy
       ]
     }))
