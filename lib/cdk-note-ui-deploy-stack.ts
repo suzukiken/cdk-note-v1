@@ -121,6 +121,7 @@ export class CdkNoteUiDeployStack extends cdk.Stack {
     })
 
     const pipeline = new codepipeline.Pipeline(this, 'pipeline', {
+      crossAccountKeys: false,
       pipelineName: id + '-pipeline',
       stages: [
         {
